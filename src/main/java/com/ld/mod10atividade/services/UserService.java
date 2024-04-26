@@ -26,4 +26,8 @@ public class UserService {
     public Mono<User> save(final User user) {
         return this.userRepository.save(user);
     }
+
+    public Mono<Void> delete(final String id) {
+        return this.userRepository.deleteById(id);
+    }
 }

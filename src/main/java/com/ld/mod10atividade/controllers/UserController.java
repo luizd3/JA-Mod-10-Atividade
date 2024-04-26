@@ -30,4 +30,14 @@ public class UserController {
     public Mono<User> save(@RequestBody final User user) {
         return this.userService.save(user);
     }
+
+    @PutMapping
+    public Mono<User> update(@RequestBody final User user) {
+        return this.userService.save(user);
+    }
+
+    @DeleteMapping("/{id}")
+    public Mono<Void> delete(@PathVariable("id") final String id) {
+        return this.userService.delete(id);
+    }
 }
