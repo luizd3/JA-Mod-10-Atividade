@@ -1,6 +1,7 @@
 package com.ld.mod10atividade.controllers;
 
 import com.ld.mod10atividade.controllers.vos.NewReviewVO;
+import com.ld.mod10atividade.controllers.vos.UpdateReviewVO;
 import com.ld.mod10atividade.model.Review;
 import com.ld.mod10atividade.services.ReviewService;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,11 @@ public class ReviewController {
         this.reviewService = reviewService;
     }
 
+    @GetMapping
+    public Flux<Review> findAll() {
+        return this.reviewService.findAll();
+    }
+
     @GetMapping("/{userId}")
     public Flux<Review> findByUser(@PathVariable("userId") final String userId) {
         return this.reviewService.findByUserId(userId);
@@ -25,5 +31,15 @@ public class ReviewController {
     @PostMapping
     public Mono<Review> newReview(@RequestBody final NewReviewVO newReviewVO) {
         return this.reviewService.newReview(newReviewVO);
+    }
+
+    @PutMapping
+    public Mono<Review> updateReview(@RequestBody final UpdateReviewVO updateReviewVO) {
+        return this.reviewService.updateReview(updateReviewVO);
+    }
+
+    @DeleteMapping("/{reviewId}")
+    public Mono<Void> deleteReview(@PathVariable("reviewId") final String reviewId) {
+        return this.reviewService.delete(reviewId);
     }
 }
