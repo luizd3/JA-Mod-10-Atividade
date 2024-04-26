@@ -29,11 +29,11 @@ public class Review {
         this.user = user;
     }
 
-    public String getMovie() {
+    public String getMovieTitle() {
         return movieTitle;
     }
 
-    public void setMovie(String string) {
+    public void setMovieTitle(String movieTitle) {
         this.movieTitle = movieTitle;
     }
 

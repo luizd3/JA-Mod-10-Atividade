@@ -27,7 +27,16 @@ public class ReviewService {
         if (!isRatingValid(newReviewVO.getRating())) {
             return Mono.error(new RuntimeException("Nota inválida"));
         } else {
-            return saveNewReview(newReviewVO);
+            String userId = newReviewVO.getUserId();
+            String movieTitle = newReviewVO.getMovieTitle();
+
+            return movieAlreadyRatedbyUser(userId, movieTitle)
+                    .flatMap(review -> {
+                        review.setRating(newReviewVO.getRating());
+                        review.setComment(newReviewVO.getComment());
+                        return reviewRepository.save(review);
+                    })
+                    .switchIfEmpty(saveNewReview(newReviewVO));
         }
     }
 
@@ -37,29 +46,15 @@ public class ReviewService {
                 .flatMap(user -> reviewRepository.save(mapToReview(user, newReviewVO)));
     }
 
-    // Método para atualizar uma avaliação ao invés de criar nova
-    private Mono<Review> updateReview(NewReviewVO newReviewVO) {
-        String userId = newReviewVO.getUserId();
-        String movieTitle = newReviewVO.getMovieTitle();
-        // Obter a avaliação a ser atualizada a partir do usuário e título do filme
-        Flux<Review> reviewToUpdate = this.findByMovieTitle(userId, movieTitle)
-                .flatMap()
-    }
-
     public Flux<Review> findByUserId(final String userId) {
         return this.reviewRepository.findByUserId(userId);
-    }
-
-    public Flux<Review> findByMovieTitle(final String userId, final String movieTitle) {
-        return this.reviewRepository.findByUserId(userId)
-                .flatMap(user -> this.reviewRepository.findByMovieTitle(movieTitle));
     }
 
     // Mapear entrada de nova avaliação (JSON) para objeto da classe Review
     private Review mapToReview(User user, NewReviewVO newReviewVO) {
         Review review = new Review();
         review.setUser(user);
-        review.setMovie(newReviewVO.getMovieTitle());
+        review.setMovieTitle(newReviewVO.getMovieTitle());
         review.setRating(newReviewVO.getRating());
         review.setComment(newReviewVO.getComment());
         return review;
@@ -75,14 +70,8 @@ public class ReviewService {
     }
 
     // Verificar se o filme já foi avaliado pelo usuário
-    private boolean movieAlreadyRatedbyUser(String userId, String movieTitle) {
-        // Obter a lista de avaliações realizadas por um determinado usuário
-        Flux<Review> userReviews = this.reviewRepository.findByUserId(userId);
-        // Verificar se algum filme avaliado pelo usuário corresponde com o filme passado no método acima
-        userReviews.flatMap()
+    private Mono<Review> movieAlreadyRatedbyUser(String userId, String movieTitle) {
+        return this.reviewRepository.findByUserIdAndMovieTitle(userId, movieTitle);
     }
-
-
-
 
 }
