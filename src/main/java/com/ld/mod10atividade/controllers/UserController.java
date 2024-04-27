@@ -27,13 +27,13 @@ public class UserController {
     }
 
     @PostMapping
-    public Mono<User> save(@RequestBody final User user) {
-        return this.userService.save(user);
+    public void save(@RequestBody final User user) {
+        this.userService.save(user);
     }
 
     @PutMapping
-    public Mono<User> update(@RequestBody final User user) {
-        return this.userService.save(user);
+    public void update(@RequestBody final User user) {
+        this.userService.save(user);
     }
 
     @DeleteMapping("/{id}")
