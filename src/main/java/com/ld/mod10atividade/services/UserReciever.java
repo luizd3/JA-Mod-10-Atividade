@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.ld.mod10atividade.model.User;
 import com.ld.mod10atividade.repositories.UserRepository;
 import org.springframework.jms.annotation.JmsListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -17,6 +18,7 @@ public class UserReciever {
     }
 
     @JmsListener(destination = "userRepository", containerFactory = "myFactory")
+    @Async
     public Mono<User> receiveUser(String userJson) {
         Gson gson = new Gson();
         User user = gson.fromJson(userJson, User.class);
