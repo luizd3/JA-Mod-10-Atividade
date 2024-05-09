@@ -4,14 +4,12 @@ import com.google.gson.Gson;
 import com.ld.mod10atividade.model.User;
 import com.ld.mod10atividade.repositories.UserRepository;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 @Component
 public class UserConsumer {
 
-    @Autowired
     private final UserRepository userRepository;
 
     public UserConsumer(UserRepository userRepository) {
@@ -19,7 +17,7 @@ public class UserConsumer {
     }
 
     @RabbitListener(queues = "users.create-user")
-    public void receiveUser(String userJson) {
+    public void receiveUserToSave(final String userJson) {
         Gson gson = new Gson();
         User user = gson.fromJson(userJson, User.class);
         System.out.println(user.toString());
@@ -37,7 +35,15 @@ public class UserConsumer {
         );
     }
 
-    private Mono<User> saveUser(User user) {
+    @RabbitListener(queues = "users.delete-user")
+    public Mono<Void> receiveUserToDelete(final String id) {
+        return this.userRepository.deleteById(id)
+                .doOnSuccess(result -> {
+                    System.out.println("User deleted: " + id);
+                });
+    }
+
+    private Mono<User> saveUser(final User user) {
         return this.userRepository.save(user);
     }
 }

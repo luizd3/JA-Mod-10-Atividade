@@ -37,7 +37,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public Mono<Void> delete(@PathVariable("id") final String id) {
-        return this.userService.delete(id);
+    public void delete(@PathVariable("id") final String id) {
+        this.userService.delete(id);
     }
 }

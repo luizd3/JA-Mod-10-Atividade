@@ -29,7 +29,7 @@ public class UserService {
         userProducer.saveUser(user);
     }
 
-    public Mono<Void> delete(final String id) {
-        return this.userRepository.deleteById(id);
+    public void delete(final String id) {
+        this.userProducer.deleteUser(id);
     }
 }

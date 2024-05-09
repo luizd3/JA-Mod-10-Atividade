@@ -17,6 +17,10 @@ public class UserProducer {
     }
 
     public void saveUser(User user) {
-        queueSender.convertAndSend("user-exchange", "routing-key-user", userAdapter.userToJson(user));
+        queueSender.convertAndSend("user-exchange", "routing-key-save-user", userAdapter.userToJson(user));
+    }
+
+    public void deleteUser(String id) {
+        queueSender.convertAndSend("user-exchange", "routing-key-delete-user", id);
     }
 }
