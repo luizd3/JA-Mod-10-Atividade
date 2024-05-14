@@ -29,17 +29,17 @@ public class ReviewController {
     }
 
     @PostMapping
-    public Mono<Review> newReview(@RequestBody final NewReviewVO newReviewVO) {
-        return this.reviewService.newReview(newReviewVO);
+    public void newReview(@RequestBody final NewReviewVO newReviewVO) {
+        this.reviewService.newReview(newReviewVO);
     }
 
     @PutMapping
-    public Mono<Review> updateReview(@RequestBody final UpdateReviewVO updateReviewVO) {
-        return this.reviewService.updateReview(updateReviewVO);
+    public void updateReview(@RequestBody final UpdateReviewVO updateReviewVO) {
+        this.reviewService.updateReview(updateReviewVO);
     }
 
     @DeleteMapping("/{reviewId}")
-    public Mono<Void> deleteReview(@PathVariable("reviewId") final String reviewId) {
-        return this.reviewService.delete(reviewId);
+    public void deleteReview(@PathVariable("reviewId") final String reviewId) {
+        this.reviewService.delete(reviewId);
     }
 }

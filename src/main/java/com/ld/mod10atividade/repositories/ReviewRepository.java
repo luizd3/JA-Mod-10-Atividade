@@ -9,7 +9,5 @@ public interface ReviewRepository extends ReactiveCrudRepository<Review, String>
 
     Flux<Review> findByUserId(final String id);
 
-    Flux<Review> findByMovieTitle(final String movieTitle);
-
     Mono<Review> findByUserIdAndMovieTitle(final String userId, final String movieTitle);
 }

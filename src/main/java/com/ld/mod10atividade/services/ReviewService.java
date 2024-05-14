@@ -17,10 +17,12 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final UserService userService;
+    private final ReviewProducer reviewProducer;
 
-    public ReviewService(ReviewRepository reviewRepository, UserService userService) {
+    public ReviewService(ReviewRepository reviewRepository, UserService userService, ReviewProducer reviewProducer) {
         this.reviewRepository = reviewRepository;
         this.userService = userService;
+        this.reviewProducer = reviewProducer;
     }
 
     public Flux<Review> findAll() {
@@ -31,45 +33,48 @@ public class ReviewService {
         return this.reviewRepository.findByUserId(userId);
     }
 
-    // Adicionar regra de negócio para verificar notas e filmes já avaliados
-    public Mono<Review> newReview(final NewReviewVO newReviewVO) {
+    // Regra de negócio para verificar notas e filmes já avaliados por um usário.
+    // Caso o filme já tenha sido avaliado pelo usuário, atualiza a avaliação.
+    // Caso o filme não tenha sido avaliado, converte os dados recebidos em objeto de Review.
+    public void newReview(final NewReviewVO newReviewVO) {
         if (!isRatingValid(newReviewVO.getRating())) {
-            return Mono.error(new RuntimeException("Nota inválida"));
+            throw new RuntimeException("Nota inválida");
         } else {
             String userId = newReviewVO.getUserId();
             String movieTitle = newReviewVO.getMovieTitle();
 
-            return movieAlreadyRatedbyUser(userId, movieTitle)
-                    .flatMap(review -> {
-                        review.setRating(newReviewVO.getRating());
-                        review.setComment(newReviewVO.getComment());
-                        return reviewRepository.save(review);
-                    })
-                    .switchIfEmpty(saveNewReview(newReviewVO));
+            Mono<Review> reviewAlreadyRatedByUser = movieAlreadyRatedbyUser(userId, movieTitle);
+
+            reviewAlreadyRatedByUser.flatMap(review -> {
+                review.setRating(newReviewVO.getRating());
+                review.setComment(newReviewVO.getComment());
+                return Mono.just(review);
+            }).switchIfEmpty(Mono.defer(() -> {
+                return newReviewFromReviewVO(newReviewVO);
+            })).subscribe(reviewProducer::saveReview);
         }
     }
 
-    public Mono<Review> updateReview(final UpdateReviewVO updateReviewVO) {
+    public void updateReview(final UpdateReviewVO updateReviewVO) {
         if (!isRatingValid(updateReviewVO.getRating())) {
-            return Mono.error(new RuntimeException("Nota inválida"));
+            throw new RuntimeException("Nota inválida");
         } else {
-            return updateExistingReview(updateReviewVO);
+            Mono<User> userMono = this.userService.findById(updateReviewVO.getUserId());
+            userMono.subscribe(user -> {
+                        Review review = mapToUpdateReview(user, updateReviewVO);
+                        reviewProducer.saveReview(review);
+                    });
         }
     }
 
-    // Método para salvar nova avaliação
-    private Mono<Review> saveNewReview(final NewReviewVO newReviewVO) {
+    // Mapear nova avaliação para classe Review contendo objeto de User
+    private Mono<Review> newReviewFromReviewVO(final NewReviewVO newReviewVO) {
         return this.userService.findById(newReviewVO.getUserId())
-                .flatMap(user -> reviewRepository.save(mapToReview(user, newReviewVO)));
+                .map(user -> mapToReview(user, newReviewVO));
     }
 
-    private Mono<Review> updateExistingReview(final UpdateReviewVO updateReviewVO) {
-        return this.userService.findById(updateReviewVO.getUserId())
-                .flatMap(user -> reviewRepository.save(mapToUpdateReview(user, updateReviewVO)));
-    }
-
-    public Mono<Void> delete(final String reviewId) {
-        return this.reviewRepository.deleteById(reviewId);
+    public void delete(final String reviewId) {
+        this.reviewProducer.deleteReview(reviewId);
     }
 
     // Mapear entrada de nova avaliação (JSON) para objeto da classe Review
@@ -82,7 +87,7 @@ public class ReviewService {
         return review;
     }
 
-    // Mapear entrada de avaliação para atualizar (JSON) para objeto da classe Review
+    // Mapear entrada de avaliação existente (JSON) para atualizar para objeto da classe Review
     private Review mapToUpdateReview(User user, UpdateReviewVO updateReviewVO) {
         Review review = new Review();
         review.setId(updateReviewVO.getId());
@@ -96,13 +101,10 @@ public class ReviewService {
     // Verificar se a nota é número inteiro de 1 a 5
     private boolean isRatingValid(Integer grade) {
         List<Integer> gradesList = Arrays.asList(1, 2, 3, 4, 5);
-        if (gradesList.contains(grade)) {
-            return true;
-        }
-        return false;
+        return gradesList.contains(grade);
     }
 
-    // Verificar se o filme já foi avaliado pelo usuário
+    // Obter filme que já tenha sido avaliado pelo usuário
     private Mono<Review> movieAlreadyRatedbyUser(String userId, String movieTitle) {
         return this.reviewRepository.findByUserIdAndMovieTitle(userId, movieTitle);
     }
